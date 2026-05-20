@@ -1,0 +1,8 @@
+---
+- name: Validate Restored ACC System
+  hosts: all
+  gather_facts: false
+  tags:
+    - validate
+  roles:
+    - acc_system_validate

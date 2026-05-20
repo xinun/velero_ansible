@@ -1,0 +1,8 @@
+---
+- name: Precheck Velero and ACC System state
+  hosts: all
+  gather_facts: false
+  tags:
+    - precheck
+  roles:
+    - velero_precheck

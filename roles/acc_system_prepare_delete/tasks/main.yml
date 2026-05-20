@@ -1,0 +1,13 @@
+---
+# tasks file for acc_system_prepare_delete
+- name: Delete mutating webhooks pointing to {{ target_namespace }}
+  shell: kubectl delete mutatingwebhookconfiguration {{ item }} --ignore-not-found
+  loop: "{{ acc_system_mutating_webhooks }}"
+
+- name: Delete validating webhooks pointing to {{ target_namespace }}
+  shell: kubectl delete validatingwebhookconfiguration {{ item }} --ignore-not-found
+  loop: "{{ acc_system_validating_webhooks }}"
+
+- name: Delete {{ target_namespace }} APIService
+  shell: kubectl delete apiservice {{ item }} --ignore-not-found
+  loop: "{{ acc_system_apiservices }}"

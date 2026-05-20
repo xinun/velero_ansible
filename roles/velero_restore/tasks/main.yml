@@ -1,0 +1,38 @@
+---
+# tasks file for velero_restore
+- name: Read backup names file
+  slurp:
+    src: "{{ backup_names_file }}"
+  register: backup_names_content
+
+- name: Parse backup names
+  set_fact:
+    full_backup_name: "{{ (backup_names_content.content | b64decode | regex_search('FULL_BK=(.*)', '\\1'))[0] }}"
+    apiservice_backup_name: "{{ (backup_names_content.content | b64decode | regex_search('API_BK=(.*)', '\\1'))[0] }}"
+
+- name: Restore 1 - namespace
+  command: >
+    velero restore create {{ full_backup_name }}-restore-{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}
+    --from-backup {{ full_backup_name }}
+    --wait
+  register: ns_restore_result
+  failed_when: false
+
+- name: Show namespace restore result
+  debug:
+    var: ns_restore_result.stdout_lines
+
+- name: Verify namespace restore PartiallyFailed or Completed
+  shell: velero restore get | grep {{ full_backup_name }}-restore | head -n 1 | egrep 'Completed|PartiallyFailed'
+  changed_when: false
+
+- name: Restore 2 - APIService
+  command: >
+    velero restore create {{ apiservice_backup_name }}-restore-{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}
+    --from-backup {{ apiservice_backup_name }}
+    --wait
+  register: api_restore_result
+
+- name: Show APIService restore result
+  debug:
+    var: api_restore_result.stdout_lines

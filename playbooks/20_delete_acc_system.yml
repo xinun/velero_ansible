@@ -1,0 +1,9 @@
+---
+- name: Delete ACC System
+  hosts: all
+  gather_facts: false
+  tags:
+    - delete
+  roles:
+    - acc_system_prepare_delete
+    - acc_system_delete

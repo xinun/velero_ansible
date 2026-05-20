@@ -1,0 +1,45 @@
+# group_vars/all.yml
+
+target_namespace: acc-system
+velero_namespace: velero
+backup_ttl: "720h0m0s"
+
+backup_prefix: acc-system
+
+backup_names_file: /root/acc-system-velero-backup-names.env
+
+webhook_backup_resources:
+  - mutatingwebhookconfigurations.admissionregistration.k8s.io
+  - validatingwebhookconfigurations.admissionregistration.k8s.io
+
+apiservice_backup_resource: apiservices.apiregistration.k8s.io
+
+acc_system_apiservices:
+  - v1beta1.alertmanagement.accordions.co.kr
+  - v1beta1.authmanagement.accordions.co.kr
+  - v1beta1.containerregistry.accordions.co.kr
+  - v1beta1.custom.metrics.k8s.io
+  - v1beta1.event.accordions.co.kr
+  - v1beta1.keycloak.accordions.co.kr
+  - v1beta1.log.accordions.co.kr
+  - v1beta1.mirror.accordions.co.kr
+
+acc_system_mutating_webhooks:
+  - containerregistry-mutating-webhook-configuration
+  - istio-sidecar-injector
+  - istio-sidecar-injector-acc-system
+  - scouter-manager
+  - cicd-mutating-webhook-configuration
+  - cicd-trigger-mutating-webhook-configuration
+
+acc_system_validating_webhooks:
+  - alertmanagement-server-validating-webhook-configuration
+  - ingress-nginx-admission
+  - istio-validator-acc-system
+
+post_restore_restart_deployments:
+  - member-agent
+
+post_restore_recreate_pods_patterns:
+  - istiod
+  - prometheus-adapter

@@ -1,0 +1,19 @@
+---
+# tasks file for velero_precheck
+- name: Check Velero backup location
+  shell: velero backup-location get | grep -q 'Available'
+  changed_when: false
+
+- name: Check node-agent DaemonSet is Ready
+  shell: kubectl get ds node-agent -n {{ velero_namespace }} | awk 'NR>1 {if ($2 == $4 && $2 > 0) print "ready"; else exit 1}'
+  changed_when: false
+
+- name: Check {{ target_namespace }} namespace is Active
+  shell: kubectl get ns {{ target_namespace }} | grep -q 'Active'
+  changed_when: false
+
+- name: Check for any InProgress or Failed backups in Velero
+  shell: kubectl get backup -n {{ velero_namespace }} | egrep 'InProgress|Failed'
+  register: bad_backups
+  failed_when: bad_backups.rc == 0
+  changed_when: false
