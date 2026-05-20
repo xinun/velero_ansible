@@ -1,6 +1,7 @@
 ---
 - name: Backup ACC System using Velero
-  hosts: all
+  hosts: k8s_master
+  become: true
   gather_facts: false
   tags:
     - backup
