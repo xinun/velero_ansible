@@ -1,0 +1,48 @@
+- name: Check kubectl nodes
+  shell: kubectl get nodes
+  register: kubectl_nodes
+  changed_when: false
+
+- name: Show kubectl nodes
+  debug:
+    var: kubectl_nodes.stdout_lines
+
+- name: Check Velero backup location
+  shell: velero backup-location get
+  register: velero_bsl
+  changed_when: false
+
+- name: Show Velero backup location
+  debug:
+    var: velero_bsl.stdout_lines
+
+- name: Fail if Velero backup location is not Available
+  shell: velero backup-location get | grep -q Available
+  changed_when: false
+
+- name: Check node-agent daemonset
+  shell: kubectl get ds node-agent -n {{ velero_namespace }}
+  register: node_agent_ds
+  changed_when: false
+
+- name: Show node-agent daemonset
+  debug:
+    var: node_agent_ds.stdout_lines
+
+- name: Check current Velero backups
+  shell: kubectl get backup -n {{ velero_namespace }} || true
+  register: velero_backups
+  changed_when: false
+
+- name: Show current Velero backups
+  debug:
+    var: velero_backups.stdout_lines
+
+- name: Check target namespace
+  shell: kubectl get ns {{ target_namespace }}
+  register: target_ns
+  changed_when: false
+
+- name: Show target namespace
+  debug:
+    var: target_ns.stdout_lines

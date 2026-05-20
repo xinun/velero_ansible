@@ -1,18 +1,8 @@
-# group_vars/all.yml
-
 target_namespace: acc-system
 velero_namespace: velero
-backup_ttl: "720h0m0s"
 
 backup_prefix: acc-system
-
 backup_names_file: /root/acc-system-velero-backup-names.env
-
-webhook_backup_resources:
-  - mutatingwebhookconfigurations.admissionregistration.k8s.io
-  - validatingwebhookconfigurations.admissionregistration.k8s.io
-
-apiservice_backup_resource: apiservices.apiregistration.k8s.io
 
 acc_system_apiservices:
   - v1beta1.alertmanagement.accordions.co.kr
@@ -39,7 +29,3 @@ acc_system_validating_webhooks:
 
 post_restore_restart_deployments:
   - member-agent
-
-post_restore_recreate_pods_patterns:
-  - istiod
-  - prometheus-adapter

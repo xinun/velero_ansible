@@ -1,8 +1,8 @@
 ---
-- name: Precheck Velero and ACC System state
-  hosts: all
+- name: Precheck Velero acc-system DR
+  hosts: k8s_master
+  become: true
   gather_facts: false
-  tags:
-    - precheck
+
   roles:
     - velero_precheck
