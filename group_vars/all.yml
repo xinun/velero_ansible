@@ -1,6 +1,6 @@
 # group_vars/all.yml
 
-# AWS S3 Integration for Velero Installation
+# S3 버킷, 리전, 시크릿파일 경로
 velero_bucket: velero-test-backup-325267459594-ap-northeast-2-an
 velero_region: ap-northeast-2
 velero_secret_file: /root/velero/credentials-velero

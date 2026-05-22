@@ -1,47 +1,65 @@
 ---
-# tasks file for 3_velero_delete
+# 3_velero_delete
+
+- name: acc-system을 바라보는 MutatingWebhook 목록 조회
+  shell: >
+    kubectl get mutatingwebhookconfigurations -o json | jq -r '.items[] | select(.webhooks[].clientConfig.service.namespace=="acc-system") | .metadata.name' | sort -u
+  register: mutating_webhooks
+
 - name: Mutating Webhook 삭제
   shell: kubectl delete mutatingwebhookconfiguration {{ item }} --ignore-not-found
-  loop:
-    - containerregistry-mutating-webhook-configuration
-    - istio-sidecar-injector
-    - istio-sidecar-injector-acc-system
-    - scouter-manager
-    - cicd-mutating-webhook-configuration
-    - cicd-trigger-mutating-webhook-configuration
-  register: delete_mutating_webhooks
+  loop: "{{ mutating_webhooks.stdout_lines }}"
+  when: mutating_webhooks.stdout_lines | length > 0
   failed_when: false
+
+- name: acc-system을 바라보는 ValidatingWebhook 목록 조회
+  shell: >
+    kubectl get validatingwebhookconfigurations -o json | jq -r '.items[] | select(.webhooks[].clientConfig.service.namespace=="acc-system") | .metadata.name' | sort -u
+  register: validating_webhooks
 
 - name: Validating Webhook 삭제
   shell: kubectl delete validatingwebhookconfiguration {{ item }} --ignore-not-found
-  loop:
-    - alertmanagement-server-validating-webhook-configuration
-    - ingress-nginx-admission
-    - istio-validator-acc-system
-  register: delete_validating_webhooks
+  loop: "{{ validating_webhooks.stdout_lines }}"
+  when: validating_webhooks.stdout_lines | length > 0
   failed_when: false
+
+- name: acc-system을 바라보는 APIService 목록 조회
+  shell: >
+    kubectl get apiservice -o json | jq -r '.items[] | select(.spec.service.namespace=="acc-system") | .metadata.name' | sort -u
+  register: apiservices
 
 - name: APIService 삭제
   shell: kubectl delete apiservice {{ item }} --ignore-not-found
-  loop:
-    - v1beta1.alertmanagement.accordions.co.kr
-    - v1beta1.authmanagement.accordions.co.kr
-    - v1beta1.containerregistry.accordions.co.kr
-    - v1beta1.custom.metrics.k8s.io
-    - v1beta1.event.accordions.co.kr
-    - v1beta1.keycloak.accordions.co.kr
-    - v1beta1.log.accordions.co.kr
-    - v1beta1.mirror.accordions.co.kr
-  register: delete_apiservices
+  loop: "{{ apiservices.stdout_lines }}"
+  when: apiservices.stdout_lines | length > 0
   failed_when: false
 
 - name: acc-system 네임스페이스 삭제
   shell: kubectl delete ns acc-system --ignore-not-found
-  register: delete_ns
 
 - name: 네임스페이스 삭제 완료 대기
   shell: kubectl wait --for=delete namespace/acc-system --timeout=300s
-  register: ns_wait
-  failed_when: ns_wait.rc != 0
+
+
+- name: acc-system 삭제 후 Released PV old claimRef 제거
+  shell: |
+    NS="acc-system"
+
+    for pv in $(kubectl get pv -o json | jq -r --arg NS "$NS" '
+      .items[]
+      | select(.spec.claimRef.namespace == $NS)
+      | select(.status.phase == "Released")
+      | .metadata.name
+    '); do
+      echo "Remove old claimRef from Released PV: $pv"
+      kubectl patch pv "$pv" --type=json -p='[{"op":"remove","path":"/spec/claimRef"}]' || true
+    done
+  register: cleanup_released_pv_claimref
+  changed_when: "'Remove old claimRef' in cleanup_released_pv_claimref.stdout"
+  failed_when: false
+
+- name: Released PV claimRef 정리 결과 출력
+  debug:
+    var: cleanup_released_pv_claimref.stdout_lines
 
 

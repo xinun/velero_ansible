@@ -1,5 +1,5 @@
 ---
-# tasks file for 1_velero_install
+# 1_velero_install
 
 - name: Velero AWS 자격 증명 디렉토리 생성
   file:
@@ -28,16 +28,15 @@
 
 
 
-- name: Velero CLI 클라이언트 버전 확인
+- name: Velero CLI 클라이언트 버전 검증
   shell: velero version --client-only
   register: velero_client_version
-  changed_when: false
 
 - name: Velero CLI 클라이언트 버전 출력
   debug:
     var: velero_client_version.stdout_lines
 
-- name: Velero 설정 파일 생성
+- name: Dry-run을 이용한 Velero 설정 파일 생성
   shell: >
     velero install
     --provider aws
@@ -53,20 +52,16 @@
 
 - name: Velero 설정 적용
   shell: kubectl apply -f /root/velero-with-node-agent.yaml
-  register: apply_result
 
 - name: node-agent 데몬셋에 컨트롤 플레인 및 마스터 톨러레이션 패치
   shell: >
     kubectl patch ds node-agent -n velero --type='merge' -p='{"spec":{"template":{"spec":{"tolerations":[{"effect":"NoSchedule","key":"node-role.kubernetes.io/control-plane","operator":"Exists"},{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","operator":"Exists"}]}}}}'
-  register: patch_result
+
 
 - name: node-agent 데몬셋 롤아웃 완료 대기
   shell: kubectl rollout status ds/node-agent -n velero --timeout=120s
   register: ds_status
-  changed_when: false
 
 - name: node-agent 데몬셋 상태 출력
   debug:
     var: ds_status.stdout_lines
-
-
