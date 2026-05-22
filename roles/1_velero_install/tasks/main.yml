@@ -40,7 +40,7 @@
   shell: >
     velero install
     --provider aws
-    --image docker.io/velero/velero:release-1.18-dev-linux-amd64
+    --image docker.io/velero/velero:v1.14.0
     --plugins velero/velero-plugin-for-aws:v1.14.0
     --bucket {{ velero_bucket }}
     --secret-file {{ velero_secret_file }}
