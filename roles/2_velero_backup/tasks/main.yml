@@ -11,8 +11,8 @@
       --snapshot-volumes=false \
       --wait
     echo "FULL_BK=$BACKUP_NAME" > /root/acc-system-velero-backup-names.env
-  async: 3600
-  poll: 15
+  async: 3000
+  poll: 5
 
 - name: acc-system 관련 APIService에 임시 라벨 추가
   shell: |

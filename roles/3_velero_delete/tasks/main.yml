@@ -34,8 +34,8 @@
   when: apiservices.stdout_lines | length > 0
   failed_when: false
 
-- name: acc-system 네임스페이스 삭제
-  shell: kubectl delete ns acc-system --ignore-not-found
+- name: acc-system 네임스페이스 삭제 (백그라운드)
+  shell: kubectl delete ns acc-system --ignore-not-found --wait=false
 
 - name: 네임스페이스 삭제 완료 대기
   shell: kubectl wait --for=delete namespace/acc-system --timeout=300s
