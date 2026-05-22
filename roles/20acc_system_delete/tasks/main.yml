@@ -1,9 +1,0 @@
----
-# tasks file for acc_system_delete
-- name: Delete {{ target_namespace }} namespace
-  shell: kubectl delete ns {{ target_namespace }} --ignore-not-found
-
-- name: Wait until {{ target_namespace }} namespace is deleted
-  shell: kubectl wait --for=delete namespace/{{ target_namespace }} --timeout=300s
-  register: ns_delete_wait
-  failed_when: ns_delete_wait.rc != 0

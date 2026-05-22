@@ -1,0 +1,68 @@
+---
+# tasks file for 2_velero_backup
+- name: 타임스탬프 설정
+  set_fact:
+    backup_ts: "{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}"
+
+- name: 백업 이름 설정
+  set_fact:
+    full_backup_name: "acc-system-namespace-{{ backup_ts }}"
+    apiservice_backup_name: "acc-system-apiservice-{{ backup_ts }}"
+    webhook_backup_name: "acc-system-webhook-{{ backup_ts }}"
+
+- name: 백업 이름 목록을 파일로 저장
+  copy:
+    dest: /root/acc-system-velero-backup-names.env
+    content: |
+      FULL_BK={{ full_backup_name }}
+      API_BK={{ apiservice_backup_name }}
+      WEBHOOK_BK={{ webhook_backup_name }}
+    mode: '0644'
+
+- name: 백업 1 - acc-system 네임스페이스 및 PVC 백업
+  shell: >
+    velero backup create {{ full_backup_name }}
+    --include-namespaces acc-system
+    --default-volumes-to-fs-backup
+    --snapshot-volumes=false
+    --wait
+  register: ns_backup_result
+
+- name: 네임스페이스 백업이 Completed 또는 PartiallyFailed인지 검증
+  shell: velero backup get {{ full_backup_name }} | egrep -q 'Completed|PartiallyFailed'
+  changed_when: false
+
+- name: 백업 2 - APIService 백업
+  shell: >
+    velero backup create {{ apiservice_backup_name }}
+    --include-cluster-resources=true
+    --include-resources apiservices.apiregistration.k8s.io
+    --wait
+  register: api_backup_result
+
+- name: APIService 백업이 Completed인지 검증
+  shell: velero backup get {{ apiservice_backup_name }} | grep -q 'Completed'
+  changed_when: false
+
+- name: 백업 3 - Webhook 백업
+  shell: >
+    velero backup create {{ webhook_backup_name }}
+    --include-cluster-resources=true
+    --include-resources mutatingwebhookconfigurations.admissionregistration.k8s.io,validatingwebhookconfigurations.admissionregistration.k8s.io
+    --wait
+  register: webhook_backup_result
+
+- name: Webhook 백업이 Completed인지 검증
+  shell: velero backup get {{ webhook_backup_name }} | grep -q 'Completed'
+  changed_when: false
+
+- name: podvolumebackups 목록 조회
+  shell: kubectl get podvolumebackups -n velero
+  register: pv_backups
+  changed_when: false
+
+- name: podvolumebackups 목록 출력
+  debug:
+    var: pv_backups.stdout_lines
+
+

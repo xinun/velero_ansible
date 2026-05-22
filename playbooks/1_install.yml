@@ -1,0 +1,8 @@
+---
+## Velero 자체를 설치
+- name: Install Velero and setup Node Agent
+  hosts: k8s_master
+  become: true
+  gather_facts: false
+  roles:
+    - 1_velero_install

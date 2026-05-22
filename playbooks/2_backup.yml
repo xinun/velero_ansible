@@ -1,0 +1,9 @@
+---
+
+## Velero로 acc-system을 백업
+- name: Run Velero Pre-backup (S3)
+  hosts: k8s_master
+  become: true
+  gather_facts: false
+  roles:
+    - 2_velero_backup

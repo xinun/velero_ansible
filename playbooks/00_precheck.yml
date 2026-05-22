@@ -1,8 +1,0 @@
----
-- name: Precheck Velero acc-system DR
-  hosts: k8s_master
-  become: true
-  gather_facts: false
-
-  roles:
-    - velero_precheck

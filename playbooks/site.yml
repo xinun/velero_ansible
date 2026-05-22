@@ -1,11 +1,12 @@
 ---
-- import_playbook: 00_precheck.yml
-  tags: precheck
-- import_playbook: 10_backup_acc_system.yml
+- import_playbook: 1_install.yml
+  tags: install
+
+- import_playbook: 2_backup.yml
   tags: backup
-- import_playbook: 20_delete_acc_system.yml
+
+- import_playbook: 3_delete.yml
   tags: delete
-- import_playbook: 30_restore_acc_system.yml
+
+- import_playbook: 4_restore.yml
   tags: restore
-- import_playbook: 40_validate_acc_system.yml
-  tags: validate

@@ -1,0 +1,72 @@
+---
+# tasks file for 1_velero_install
+
+- name: Velero AWS 자격 증명 디렉토리 생성
+  file:
+    path: "{{ velero_secret_file | dirname }}"
+    state: directory
+    mode: '0750'
+
+- name: Velero AWS 자격 증명 파일 동적 생성(velero install시 키를 직접 넣는것은 권장하지 않아서 file로 생성)
+  copy:
+    dest: "{{ velero_secret_file }}"
+    content: |
+      [default]
+      aws_access_key_id={{ aws_access_key_id }}
+      aws_secret_access_key={{ aws_secret_access_key }}
+    mode: '0600'
+
+- name: Velero CLI 다운로드
+  shell: |
+    cd /root
+    wget -q https://github.com/velero-io/velero/releases/download/v1.18.0/velero-v1.18.0-linux-amd64.tar.gz
+    tar xvzf velero-v1.18.0-linux-amd64.tar.gz
+    mv velero-v1.18.0-linux-amd64/velero /usr/local/bin/
+    rm -rf velero-v1.18.0-linux-amd64.tar.gz velero-v1.18.0-linux-amd64
+  args:
+    creates: /usr/local/bin/velero
+
+
+
+- name: Velero CLI 클라이언트 버전 확인
+  shell: velero version --client-only
+  register: velero_client_version
+  changed_when: false
+
+- name: Velero CLI 클라이언트 버전 출력
+  debug:
+    var: velero_client_version.stdout_lines
+
+- name: Velero 설정 파일 생성
+  shell: >
+    velero install
+    --provider aws
+    --image docker.io/velero/velero:release-1.18-dev-linux-amd64
+    --plugins velero/velero-plugin-for-aws:v1.14.0
+    --bucket {{ velero_bucket }}
+    --secret-file {{ velero_secret_file }}
+    --backup-location-config region={{ velero_region }}
+    --use-volume-snapshots=false
+    --use-node-agent
+    --dry-run -o yaml > /root/velero-with-node-agent.yaml
+  changed_when: true
+
+- name: Velero 설정 적용
+  shell: kubectl apply -f /root/velero-with-node-agent.yaml
+  register: apply_result
+
+- name: node-agent 데몬셋에 컨트롤 플레인 및 마스터 톨러레이션 패치
+  shell: >
+    kubectl patch ds node-agent -n velero --type='merge' -p='{"spec":{"template":{"spec":{"tolerations":[{"effect":"NoSchedule","key":"node-role.kubernetes.io/control-plane","operator":"Exists"},{"effect":"NoSchedule","key":"node-role.kubernetes.io/master","operator":"Exists"}]}}}}'
+  register: patch_result
+
+- name: node-agent 데몬셋 롤아웃 완료 대기
+  shell: kubectl rollout status ds/node-agent -n velero --timeout=120s
+  register: ds_status
+  changed_when: false
+
+- name: node-agent 데몬셋 상태 출력
+  debug:
+    var: ds_status.stdout_lines
+
+

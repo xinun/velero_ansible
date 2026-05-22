@@ -1,0 +1,9 @@
+---
+## acc-system을 삭제
+## acc-system ns 는 webhook과 apiservice과 연결 되어있기 때문에 관련 데이터도 삭제
+- name: Delete acc-system Namespace and resources
+  hosts: k8s_master
+  become: true
+  gather_facts: false
+  roles:
+    - 3_velero_delete

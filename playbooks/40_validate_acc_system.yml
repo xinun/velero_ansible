@@ -1,9 +1,0 @@
----
-- name: Validate Restored ACC System
-  hosts: k8s_master
-  become: true
-  gather_facts: false
-  tags:
-    - validate
-  roles:
-    - acc_system_validate

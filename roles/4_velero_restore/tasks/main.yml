@@ -1,0 +1,67 @@
+---
+# tasks file for 4_velero_restore
+- name: 백업 이름 기록 파일 읽기
+  slurp:
+    src: /root/acc-system-velero-backup-names.env
+  register: backup_names_content
+
+- name: 백업 이름 파싱
+  set_fact:
+    full_backup_name: "{{ (backup_names_content.content | b64decode | regex_search('FULL_BK=(.*)', '\\1'))[0] }}"
+    apiservice_backup_name: "{{ (backup_names_content.content | b64decode | regex_search('API_BK=(.*)', '\\1'))[0] }}"
+    webhook_backup_name: "{{ (backup_names_content.content | b64decode | regex_search('WEBHOOK_BK=(.*)', '\\1'))[0] }}"
+
+- name: 복구 1 - 네임스페이스 및 PVC 복구
+  shell: >
+    velero restore create {{ full_backup_name }}-restore-{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}
+    --from-backup {{ full_backup_name }}
+    --wait
+  register: ns_restore_result
+  failed_when: false
+
+- name: 네임스페이스 복구 결과 출력
+  debug:
+    var: ns_restore_result.stdout_lines
+
+- name: 모든 podvolumerestores 리소스 목록 조회
+  shell: kubectl get podvolumerestores -n velero -o jsonpath='{.items[*].metadata.name}'
+  register: pvr_list
+  changed_when: false
+
+- name: 락 방지를 위한 podvolumerestores finalizers 패치
+  shell: >
+    kubectl patch podvolumerestore {{ item }} -n velero --type=merge -p '{"metadata":{"finalizers":[]}}'
+  loop: "{{ pvr_list.stdout.split() }}"
+  when: pvr_list.stdout.split() | length > 0
+  failed_when: false
+
+- name: 기존 podvolumerestores 삭제
+  shell: >
+    kubectl delete podvolumerestore {{ item }} -n velero --ignore-not-found
+  loop: "{{ pvr_list.stdout.split() }}"
+  when: pvr_list.stdout.split() | length > 0
+  failed_when: false
+
+- name: 복구 2 - APIService 복구
+  shell: >
+    velero restore create {{ apiservice_backup_name }}-restore-{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}
+    --from-backup {{ apiservice_backup_name }}
+    --wait
+  register: api_restore_result
+
+- name: APIService 복구 결과 출력
+  debug:
+    var: api_restore_result.stdout_lines
+
+- name: 복구 3 - Webhook 복구
+  shell: >
+    velero restore create {{ webhook_backup_name }}-restore-{{ lookup('pipe', 'date +%Y%m%d-%H%M%S') }}
+    --from-backup {{ webhook_backup_name }}
+    --wait
+  register: webhook_restore_result
+
+- name: Webhook 복구 결과 출력
+  debug:
+    var: webhook_restore_result.stdout_lines
+
+

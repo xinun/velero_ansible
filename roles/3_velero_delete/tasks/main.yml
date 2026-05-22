@@ -1,0 +1,47 @@
+---
+# tasks file for 3_velero_delete
+- name: Mutating Webhook 삭제
+  shell: kubectl delete mutatingwebhookconfiguration {{ item }} --ignore-not-found
+  loop:
+    - containerregistry-mutating-webhook-configuration
+    - istio-sidecar-injector
+    - istio-sidecar-injector-acc-system
+    - scouter-manager
+    - cicd-mutating-webhook-configuration
+    - cicd-trigger-mutating-webhook-configuration
+  register: delete_mutating_webhooks
+  failed_when: false
+
+- name: Validating Webhook 삭제
+  shell: kubectl delete validatingwebhookconfiguration {{ item }} --ignore-not-found
+  loop:
+    - alertmanagement-server-validating-webhook-configuration
+    - ingress-nginx-admission
+    - istio-validator-acc-system
+  register: delete_validating_webhooks
+  failed_when: false
+
+- name: APIService 삭제
+  shell: kubectl delete apiservice {{ item }} --ignore-not-found
+  loop:
+    - v1beta1.alertmanagement.accordions.co.kr
+    - v1beta1.authmanagement.accordions.co.kr
+    - v1beta1.containerregistry.accordions.co.kr
+    - v1beta1.custom.metrics.k8s.io
+    - v1beta1.event.accordions.co.kr
+    - v1beta1.keycloak.accordions.co.kr
+    - v1beta1.log.accordions.co.kr
+    - v1beta1.mirror.accordions.co.kr
+  register: delete_apiservices
+  failed_when: false
+
+- name: acc-system 네임스페이스 삭제
+  shell: kubectl delete ns acc-system --ignore-not-found
+  register: delete_ns
+
+- name: 네임스페이스 삭제 완료 대기
+  shell: kubectl wait --for=delete namespace/acc-system --timeout=300s
+  register: ns_wait
+  failed_when: ns_wait.rc != 0
+
+

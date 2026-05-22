@@ -1,31 +1,11 @@
-target_namespace: acc-system
-velero_namespace: velero
+# group_vars/all.yml
 
-backup_prefix: acc-system
-backup_names_file: /root/acc-system-velero-backup-names.env
+# AWS S3 Integration for Velero Installation
+velero_bucket: velero-test-backup-325267459594-ap-northeast-2-an
+velero_region: ap-northeast-2
+velero_secret_file: /root/velero/credentials-velero
 
-acc_system_apiservices:
-  - v1beta1.alertmanagement.accordions.co.kr
-  - v1beta1.authmanagement.accordions.co.kr
-  - v1beta1.containerregistry.accordions.co.kr
-  - v1beta1.custom.metrics.k8s.io
-  - v1beta1.event.accordions.co.kr
-  - v1beta1.keycloak.accordions.co.kr
-  - v1beta1.log.accordions.co.kr
-  - v1beta1.mirror.accordions.co.kr
+# AWS Credentials
+aws_access_key_id: "YOUR_AWS_ACCESS_KEY_ID"
+aws_secret_access_key: "YOUR_AWS_SECRET_ACCESS_KEY"
 
-acc_system_mutating_webhooks:
-  - containerregistry-mutating-webhook-configuration
-  - istio-sidecar-injector
-  - istio-sidecar-injector-acc-system
-  - scouter-manager
-  - cicd-mutating-webhook-configuration
-  - cicd-trigger-mutating-webhook-configuration
-
-acc_system_validating_webhooks:
-  - alertmanagement-server-validating-webhook-configuration
-  - ingress-nginx-admission
-  - istio-validator-acc-system
-
-post_restore_restart_deployments:
-  - member-agent

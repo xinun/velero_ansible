@@ -1,0 +1,8 @@
+---
+## acc-system이 삭제 되었을 경우 삭제
+- name: Restore acc-system Namespace and resources
+  hosts: k8s_master
+  become: true
+  gather_facts: false
+  roles:
+    - 4_velero_restore
