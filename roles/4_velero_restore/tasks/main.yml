@@ -1,5 +1,5 @@
 ---
-# tasks file for 4_velero_restore
+# 4_velero_restore
 - name: 백업 이름 기록 파일 읽기
   slurp:
     src: /root/acc-system-velero-backup-names.env
