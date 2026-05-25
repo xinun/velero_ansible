@@ -22,7 +22,7 @@ ansible-playbook playbooks/3_delete.yml
 ansible-playbook playbooks/4_restore.yml
 ```
 
-## 5. 전체 일괄 실행 (참고)
+## 5. 전체 실행
 ```bash
 ansible-playbook playbooks/site.yml
 ```
