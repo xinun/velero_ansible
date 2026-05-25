@@ -11,10 +11,6 @@
     apiservice_backup_name: "{{ (backup_names_content.content | b64decode | regex_search('API_BK=(.*)', '\\1'))[0] }}"
     webhook_backup_name: "{{ (backup_names_content.content | b64decode | regex_search('WEBHOOK_BK=(.*)', '\\1'))[0] }}"
 
-# ======================================================================================
-# [안전 장치] 이전 복구 실패로 남아있는 PVR(podvolumerestore) 찌꺼기 자동 청소
-# 이 3개의 태스크는 한 세트로 작동하여, 다음 복구 시 락(Lock)에 걸리지 않도록 길을 터줍니다.
-# ======================================================================================
 - name: 1단계 - 모든 podvolumerestores 리소스 목록 조회 (찌꺼기 수집)
   shell: kubectl get podvolumerestores -n velero -o jsonpath='{.items[*].metadata.name}'
   register: pvr_list
@@ -32,7 +28,6 @@
   loop: "{{ pvr_list.stdout.split() }}"
   when: pvr_list.stdout.split() | length > 0
   failed_when: false
-# ======================================================================================
 
 - name: 복구 1 - APIService 복구
   shell: >
